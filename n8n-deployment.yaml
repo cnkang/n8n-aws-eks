@@ -1,4 +1,3 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -35,7 +34,7 @@ spec:
             - name: DB_TYPE
               value: postgresdb
             - name: DB_POSTGRESDB_HOST
-              value: REPLACE_ME_DB_HOST
+              value: postgres-service.n8n.svc.cluster.local
             - name: DB_POSTGRESDB_PORT
               value: "5432"
             - name: DB_POSTGRESDB_DATABASE
@@ -54,59 +53,15 @@ spec:
               value: http
             - name: N8N_PORT
               value: "5678"
-            - name: N8N_HOST
-              value: REPLACE_ME_N8N_HOST
-            - name: EXECUTIONS_MODE
-              value: queue
-            - name: QUEUE_BULL_REDIS_HOST
-              value: redis
-            - name: QUEUE_BULL_REDIS_PORT
-              value: "6379"
-            - name: N8N_ENCRYPTION_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: n8n-secret
-                  key: N8N_ENCRYPTION_KEY
-            - name: N8N_BASIC_AUTH_ACTIVE
-              valueFrom:
-                secretKeyRef:
-                  name: n8n-secret
-                  key: N8N_BASIC_AUTH_ACTIVE
-            - name: N8N_BASIC_AUTH_USER
-              valueFrom:
-                secretKeyRef:
-                  name: n8n-secret
-                  key: N8N_BASIC_AUTH_USER
-            - name: N8N_BASIC_AUTH_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: n8n-secret
-                  key: N8N_BASIC_AUTH_PASSWORD
-            - name: N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS
-              value: "true"
           image: n8nio/n8n
           name: n8n
           ports:
             - containerPort: 5678
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 5678
-            initialDelaySeconds: 30
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /healthz
-              port: 5678
-            initialDelaySeconds: 5
-            periodSeconds: 10
           resources:
             requests:
-              memory: "2Gi"
-              cpu: "1"
+              memory: "250Mi"
             limits:
-              memory: "2Gi"
-              cpu: "1"
+              memory: "500Mi"
           volumeMounts:
             - mountPath: /home/node/.n8n
               name: n8n-claim0
