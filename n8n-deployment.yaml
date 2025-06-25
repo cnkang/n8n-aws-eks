@@ -69,6 +69,8 @@ spec:
               value: "5678"
             - name: N8N_HOST
               value: REPLACE_ME_N8N_HOST
+            - name: WEBHOOK_URL
+              value: REPLACE_ME_WEBHOOK_URL
             - name: EXECUTIONS_MODE
               value: queue
             - name: QUEUE_BULL_REDIS_HOST
