@@ -12,6 +12,8 @@ DEPLOY_INFO_FILE="deploy_info.env"
 AURORA_MIN_CAPACITY="${AURORA_MIN_CAPACITY:-0}"
 AURORA_MAX_CAPACITY="${AURORA_MAX_CAPACITY:-2}"
 N8N_HOST="${N8N_HOST:-localhost}"
+N8N_PROTOCOL="${N8N_PROTOCOL:-http}"
+WEBHOOK_URL="${WEBHOOK_URL:-https://$N8N_HOST}"
 
 usage() {
   echo "Usage: $0 [--region REGION] [--k8sname NAME] [--domain DOMAIN]" >&2
@@ -31,6 +33,7 @@ while [ $# -gt 0 ]; do
       ;;
     --domain)
       N8N_HOST="$2"
+      WEBHOOK_URL="https://$2"
       shift 2
       ;;
     --help|-h)
@@ -567,9 +570,11 @@ aws rds-data execute-statement --resource-arn "$DB_ARN" --secret-arn "$SECRET_AR
 
 sed -e "s/REPLACE_ME_DB_HOST/$DB_HOST/" \
     -e "s/REPLACE_ME_N8N_HOST/$N8N_HOST/" \
+    -e "s#REPLACE_ME_WEBHOOK_URL#$WEBHOOK_URL#" \
     n8n-deployment.yaml > n8n-deployment.generated.yaml
 sed -e "s/REPLACE_ME_DB_HOST/$DB_HOST/" \
     -e "s/REPLACE_ME_N8N_HOST/$N8N_HOST/" \
+    -e "s#REPLACE_ME_WEBHOOK_URL#$WEBHOOK_URL#" \
     n8n-worker-deployment.yaml > n8n-worker-deployment.generated.yaml
 
 # Apply the EFS storage class
