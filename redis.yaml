@@ -16,9 +16,18 @@ spec:
     spec:
       containers:
         - name: redis
-          image: redis:8
+          image: redis:8-alpine
           ports:
-              - containerPort: 6379
+            - containerPort: 6379
+          livenessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 1000
+            fsGroup: 1000
           resources:
             requests:
               memory: "512Mi"
