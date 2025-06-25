@@ -324,7 +324,7 @@ VPC_ID=$(aws eks describe-cluster --name "$CLUSTER_NAME" --region "$REGION" \
 # Create a dedicated security group for the Application Load Balancer
 ALB_SG_NAME="${CLUSTER_NAME}-alb-sg"
 ALB_SG_ID=$(aws ec2 describe-security-groups \
-  --filters Name=group-name,Values="$ALB_SG_NAME" \
+  --filters Name=group-name,Values="$ALB_SG_NAME" Name=vpc-id,Values="$VPC_ID" \
   --region "$REGION" --query 'SecurityGroups[0].GroupId' --output text 2>/dev/null || echo "")
 if [ -z "$ALB_SG_ID" ] || [ "$ALB_SG_ID" = "None" ]; then
   ALB_SG_ID=$(aws ec2 create-security-group \
