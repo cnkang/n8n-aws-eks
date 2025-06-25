@@ -1,0 +1,23 @@
+name: Lint YAML and Shell Scripts
+
+on:
+  push:
+    branches: ["main", "dev"]
+  pull_request:
+    branches: ["main", "dev"]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install linting tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yamllint shellcheck
+      - name: Lint YAML files
+        run: yamllint .
+      - name: Lint shell scripts
+        run: |
+          find . -name '*.sh' -print0 | xargs -0 shellcheck -s bash

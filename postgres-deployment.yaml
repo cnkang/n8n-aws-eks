@@ -49,7 +49,7 @@ spec:
               subPath: init-data.sh
           env:
             - name: PGDATA
-              value: /var/lib/postgresql/data/pgdata      
+              value: /var/lib/postgresql/data/pgdata
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
@@ -72,7 +72,7 @@ spec:
                 secretKeyRef:
                   name: postgres-secret
                   key: POSTGRES_NON_ROOT_PASSWORD
-            - name:   POSTGRES_HOST
+            - name: POSTGRES_HOST
               value: postgres-service
             - name: POSTGRES_PORT
               value: '5432'

@@ -22,4 +22,3 @@ spec:
                 name: n8n
                 port:
                   number: 5678
-
