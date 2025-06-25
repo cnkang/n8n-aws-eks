@@ -130,7 +130,7 @@ This solution deploys [n8n](https://n8n.io/), an open source workflow automation
 
 ## Continuous Integration
 
-This repository uses GitHub Actions to lint all YAML manifests and shell scripts on every push and pull request. The workflow installs `yamllint` and `shellcheck` to verify configuration files and shell scripts. YAML files are checked using the rules in `.yamllint`, which extend the relaxed preset but still enforce indentation, trailing spaces, and a newline at the end of files. Shell scripts are scanned with `shellcheck`.
+This repository uses GitHub Actions to lint all YAML manifests and shell scripts on every push and pull request targeting the `main` or `dev` branches. The workflow can also be triggered manually. It installs `yamllint` and `shellcheck` to verify configuration files and shell scripts. YAML files are checked using the rules in `.yamllint`, which extend the relaxed preset but still enforce indentation, trailing spaces, and a newline at the end of files. Shell scripts are scanned with `shellcheck`.
 
 ## Notes
 

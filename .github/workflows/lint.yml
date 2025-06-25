@@ -2,9 +2,10 @@ name: Lint YAML and Shell Scripts
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "dev"]
   pull_request:
-    branches: ["main"]
+    branches: ["main", "dev"]
+  workflow_dispatch:
 
 jobs:
   lint:
