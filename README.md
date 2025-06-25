@@ -84,7 +84,7 @@ If a permission is missing, the script prints which actions are required and exi
    - `AURORA_MIN_CAPACITY` / `AURORA_MAX_CAPACITY`
    - `N8N_BASIC_AUTH_ACTIVE`, `N8N_BASIC_AUTH_USER`, `N8N_BASIC_AUTH_PASSWORD`
    - `N8N_HOST`
-   - Update credentials in `postgres-secret.yaml` if needed
+   - Update credentials in `postgres-secret.yaml` for your RDS cluster if needed
 
 2. **Deploy**
    ```bash
