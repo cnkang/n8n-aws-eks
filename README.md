@@ -1,70 +1,29 @@
 # n8n on AWS EKS Fargate
 
-> **Note:** This repository is **only for deploying n8n on AWS EKS Fargate**. All manifests, automation scripts, and configurations are AWS cloud-native and **do not work on other Kubernetes environments or public clouds**.
+> **Note:** This repository is **only for deploying n8n on AWS EKS Fargate**. All manifests and scripts are AWS specific and will not work on other Kubernetes environments or cloud providers.
 
----
+## Overview
 
-## About
+This project contains automation scripts and Kubernetes manifests to run [n8n](https://n8n.io/) on serverless EKS Fargate. It relies on AWS managed services such as EFS, Aurora PostgreSQL, and CloudFront. n8n runs in queue mode with scaling worker pods, and all logs stream to CloudWatch.
 
-This solution deploys [n8n](https://n8n.io/) (an open-source workflow automation platform) on serverless Kubernetes (EKS Fargate) with **full AWS-native services**:
+## Prerequisites
 
-- **EKS Fargate** (serverless Kubernetes compute)
-- **Amazon EFS** (shared, persistent PVC for n8n state and files)
-- **Amazon Aurora PostgreSQL Serverless v2** (scaling DB backend)
-- **Amazon Elasticache (Redis)** (for n8n queue mode; see below)
-- **Application Load Balancer (ALB) & Ingress**
-- **Amazon CloudFront** (secure, global edge access)
-- **AWS IAM** (auto IAM policy management)
-- **AWS Secrets Manager** (stores DB/master credentials securely)
-- **AWS CloudWatch** (logs from all pods)
-
-All services are provisioned and destroyed with the provided scripts, and n8n runs in **queue mode**: main and worker pods scale dynamically, connected via Redis.
-
----
-
-## Origin and License
-
-This project includes code derived from the n8n-hosting repository:  
-[https://github.com/n8n-io/n8n-hosting/tree/main/kubernetes](https://github.com/n8n-io/n8n-hosting/tree/main/kubernetes)
-
-Released under the MIT License (see `LICENSE`).
-
----
-
-## Features
-
-- **AWS-Only:** All deployments, resources, IAM policies, and security groups are AWS-specific.
-- **Automated lifecycle:** One-step deploy and destroy for your cloud-native n8n stack.
-- **Queue Mode Enabled:** n8n runs in queue mode by default; workers scale via HPA, Redis included.
-- **Security best practices:** Secrets/credentials stored in Kubernetes Secrets and AWS Secrets Manager.
-- **Persistent & Highly Available:** All n8n data is on AWS EFS, supporting parallel scaling and stateless bridges.
-- **All pod logs go to CloudWatch Logs.**
-- **Ingress traffic is only allowed via CloudFront.**
-
----
-
-## Prerequisites & Tooling
-
-Install and configure on your system:
+Install and configure the following tools and ensure your AWS credentials are available:
 
 - AWS CLI
 - eksctl
 - kubectl
 - helm
 - curl
-- openssl  (for generating encryption keys)
-- jq       (required for resource cleanup scripts)
+- openssl (for generating encryption keys)
+- jq (required by the cleanup script)
+- kustomize (used with `kubectl apply -k`)
 
-You must provide AWS credentials and have the correct IAM permissions (see below).
+### Required IAM permissions
 
----
+`deploy-eks-fargate.sh` and `destroy-eks-fargate.sh` check that your user or role has these permissions before running.
 
-## Required IAM Permissions
-
-The deployment (**deploy-eks-fargate.sh**) and destroy (**destroy-eks-fargate.sh**) scripts **explicitly check** for these IAM permissions and will refuse to run if any are missing.
-
-### For Deployment
-
+#### For deployment
 - `elasticfilesystem:CreateFileSystem`
 - `elasticfilesystem:CreateMountTarget`
 - `ec2:DescribeSubnets`
@@ -96,8 +55,7 @@ The deployment (**deploy-eks-fargate.sh**) and destroy (**destroy-eks-fargate.sh
 - `cloudfront:ListCachePolicies`
 - `cloudfront:DeleteDistribution`
 
-### For Destroy
-
+#### For destroy
 - `elasticfilesystem:DeleteFileSystem`
 - `elasticfilesystem:DeleteMountTarget`
 - `elasticfilesystem:DescribeFileSystems`
@@ -117,82 +75,76 @@ The deployment (**deploy-eks-fargate.sh**) and destroy (**destroy-eks-fargate.sh
 - `cloudfront:UpdateDistribution`
 - `cloudfront:DeleteDistribution`
 
-If any required permission is missing, the script will abort and print a list of missing actions.
-
----
+If a permission is missing, the script prints which actions are required and exits.
 
 ## Quickstart
 
-### 1. Optional: Set Environment Variables
+1. **Optionally configure environment variables**
+   
+   - `AURORA_MIN_CAPACITY` / `AURORA_MAX_CAPACITY`
+   - `N8N_BASIC_AUTH_ACTIVE`, `N8N_BASIC_AUTH_USER`, `N8N_BASIC_AUTH_PASSWORD`
+   - `N8N_HOST`
+   - Update credentials in `postgres-secret.yaml` if needed
 
-Before deploying, you may export these variables to override defaults:
+2. **Deploy**
+   ```bash
+   ./deploy-eks-fargate.sh --region <aws-region> --k8sname <cluster-name> --domain <n8n-domain>
+   ```
+   The arguments are optional and have sensible defaults. When complete, the script prints the CloudFront URL to access n8n. Run `./deploy-eks-fargate.sh --help` for all options.
 
-- `AURORA_MIN_CAPACITY` / `AURORA_MAX_CAPACITY`  
-- `N8N_BASIC_AUTH_ACTIVE`, `N8N_BASIC_AUTH_USER`, `N8N_BASIC_AUTH_PASSWORD`
-- `N8N_HOST`
-- Edit the database credentials in `postgres-secret.yaml`.
+3. **Access n8n**
+   
+   - Use the CloudFront DNS name (HTTPS enforced)
+   - Data persists on EFS and logs stream to CloudWatch
+   - Worker pods scale via HPA
 
-### 2. Deploy
+4. **Clean up**
+   ```bash
+   ./destroy-eks-fargate.sh
+   ```
+   This removes all resources using state files from the deployment.
 
-```bash
-./deploy-eks-fargate.sh --region <aws-region> --k8sname <cluster-name> --domain <n8n-domain>
-# All arguments are optional and have defaults.
-```
+## Architecture
 
-On completion, the script prints a CloudFront endpoint for public access.
+This solution deploys [n8n](https://n8n.io/), an open source workflow automation platform, on serverless Kubernetes (EKS Fargate) using AWS managed services. n8n runs in queue mode with worker pods connected through Redis, and all logs stream to CloudWatch.
 
-### 3. Access n8n
+## Features
 
-- Use the provided CloudFront DNS (HTTPS enforced, modern TLS).
-- Data persists to EFS; all logs go to CloudWatch.
-- Automatic scaling for worker deployments via HPA.
-- All sensitive values are stored securely.
+- **AWS only** – all resources, IAM policies and security groups are AWS specific
+- **Automated lifecycle** – single commands to deploy and destroy the entire stack
+- **Queue mode enabled** – workers scale automatically via HPA
+- **Security best practices** – secrets stored in Kubernetes Secrets and AWS Secrets Manager
+- **Persistent and highly available** – data stored on EFS for horizontal scaling
+- **Ingress via CloudFront** – public access is served through CloudFront
 
----
+## Repository structure
 
-## Cleaning Up
-
-To destroy **all provisioned AWS resources** (EKS, Aurora, EFS, CloudFront, ALB, Secrets, Security Groups, etc):
-
-```bash
-./destroy-eks-fargate.sh
-```
-
-This uses state files generated on deployment (`efs_id.txt`, `cloudfront_id.txt`, `deploy_info.env`).
-
----
+- `deploy-eks-fargate.sh` – deployment script
+- `destroy-eks-fargate.sh` – teardown script
+- `eks-fargate-cluster.yaml` – EKS cluster configuration
+- `cloudwatch-logging.yaml` – CloudWatch logging configuration
+- `n8n-deployment.yaml`, `n8n-worker-deployment.yaml` – n8n and worker deployments
+- `redis.yaml` – Redis deployment
+- `efs-storageclass.yaml`, `n8n-pv.yaml`, `n8n-claim0-persistentvolumeclaim.yaml` – EFS volumes
+- Other manifests and scripts are AWS specific
 
 ## Notes
 
-- **Kubernetes Secrets and DB credentials:** Handled automatically, but you can customize before initial deploy.
-- **Redis deployment:** Included as a Deployment and Service in `redis.yaml`.
-- **kustomize** is required (`kubectl apply -k`). Install via official script or Homebrew.
-- **Troubleshooting:** If permissions or resource creation fails, scripts will stop and print diagnostics. See their "Troubleshooting" sections.
-
----
-
-## File Structure
-
-- `deploy-eks-fargate.sh`: Main deployment script
-- `destroy-eks-fargate.sh`: Complete stack clean-up script
-- `eks-fargate-cluster.yaml`: EKS cluster configuration
-- `cloudwatch-logging.yaml`: CloudWatch log configuration
-- `n8n-deployment.yaml`, `n8n-worker-deployment.yaml`: n8n and queue worker deployments
-- `redis.yaml`: Redis deployment and Service
-- `efs-storageclass.yaml`, `n8n-pv.yaml`, `n8n-claim0-persistentvolumeclaim.yaml`: EFS persistent volumes
-- All other manifests and scripts are AWS-specific.
-
----
+- Kubernetes Secrets and database credentials are generated automatically but can be customised before deploying
+- Troubleshooting steps are documented in the scripts if resource creation fails
 
 ## Caveats
 
-- This solution is **only** maintained and supported for AWS EKS Fargate.
-- Do **not** attempt to run on Azure, GCP, or any other Kubernetes environment.
-- All infrastructure and data are managed at your own risk.
+- Supported only on AWS EKS Fargate
+- Do not attempt to use these manifests on other Kubernetes environments
+- Manage infrastructure at your own risk
 
----
+## Origin and license
 
-## More Information
+Parts of this repository come from [n8n-hosting](https://github.com/n8n-io/n8n-hosting/tree/main/kubernetes). This project is released under the MIT License (see `LICENSE`).
 
-- Questions/discussion: [n8n Community Forums](https://community.n8n.io/)
+## More information
+
+- Ask questions on the [n8n Community Forums](https://community.n8n.io/)
+
 - Upstream origin: [n8n-hosting/kubernetes](https://github.com/n8n-io/n8n-hosting/tree/main/kubernetes)
