@@ -17,6 +17,15 @@ spec:
       containers:
         - name: redis
           image: redis:8
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
           ports:
               - containerPort: 6379
           resources:

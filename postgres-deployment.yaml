@@ -23,6 +23,15 @@ spec:
       containers:
         - image: postgres:11
           name: postgres
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
           resources:
             limits:
               cpu: "4"
