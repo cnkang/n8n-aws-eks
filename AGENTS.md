@@ -1,9 +1,9 @@
-# AGENTS instructions
+# AGENTS Instructions
 
-- Run `shellcheck` on all shell scripts before committing.
+- Ensure all shell scripts pass `shellcheck` before committing.
 - Use 2 spaces for YAML indentation.
-- PR message must include **Summary** and **Testing** sections.
-- Provide file citations for code changes and terminal citations for program output.
-- Use English for PR titles, descriptions, and branch names.
-- When modifying deployment or deletion scripts to use new AWS permissions, also
-  update the permission checks so they validate those actions.
+- **Commit messages** must follow industry best practices (e.g., [Conventional Commits](https://www.conventionalcommits.org/) or a clear, descriptive style), and must be written in English.
+- All PR messages must include **Summary** and **Testing** sections.
+- For code changes, provide file citations. For program output, provide terminal citations.
+- PR titles, descriptions, and branch names must be in English.
+- When updating deployment or deletion scripts to use new AWS permissions, also update their permission checks to validate the corresponding actions.
