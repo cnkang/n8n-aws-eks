@@ -20,11 +20,8 @@ spec:
         fsGroup: 1000
       containers:
         - name: redis
-          image: redis:8-alpine
+          image: redis:8-alpine-alpine
           securityContext:
-            runAsUser: 999
-            runAsGroup: 1000
-            fsGroup: 1000
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             runAsNonRoot: true
