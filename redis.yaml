@@ -27,7 +27,7 @@ spec:
             seccompProfile:
               type: RuntimeDefault
           ports:
-              - containerPort: 6379
+            - containerPort: 6379
           resources:
             requests:
               memory: "512Mi"
