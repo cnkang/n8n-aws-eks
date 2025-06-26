@@ -22,16 +22,17 @@ spec:
       containers:
         - name: redis
           image: redis:8-alpine
-          ports:
-            - containerPort: 6379
           securityContext:
             readOnlyRootFilesystem: true
             runAsNonRoot: true
+            allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL
             seccompProfile:
               type: RuntimeDefault
+          ports:
+            - containerPort: 6379
           livenessProbe:
             tcpSocket:
               port: 6379
