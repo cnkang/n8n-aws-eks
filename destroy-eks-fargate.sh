@@ -96,6 +96,9 @@ REQUIRED_ACTIONS=(
   "secretsmanager:ListSecrets"
   "ec2:DeleteSecurityGroup"
   "ec2:DescribeSecurityGroups"
+  "ec2:DescribeVpcs"
+  "ec2:DescribeSubnets"
+  "ec2:DeleteVpc"
   "iam:SimulatePrincipalPolicy"
   "cloudfront:ListDistributions"
   "cloudfront:GetDistribution"
@@ -163,6 +166,10 @@ delete_vpa_crd() {
 
 
 check_permissions
+
+# Record the cluster VPC ID before deletion
+VPC_ID=$(aws eks describe-cluster --name "$CLUSTER_NAME" --region "$REGION" \
+  --query 'cluster.resourcesVpcConfig.vpcId' --output text 2>/dev/null || echo "")
 
 EFS_ID="${EFS_ID:-}"
 if [ -z "$EFS_ID" ]; then
@@ -255,6 +262,17 @@ echo "Deleting EKS cluster..."
 eksctl delete cluster \
   --name "$CLUSTER_NAME" \
   --region "$REGION"
+
+# Ensure the VPC created for the cluster is deleted
+if [ -n "$VPC_ID" ] && aws ec2 describe-vpcs --vpc-ids "$VPC_ID" --region "$REGION" >/dev/null 2>&1; then
+  subnets=$(aws ec2 describe-subnets --filters Name=vpc-id,Values="$VPC_ID" \
+    --region "$REGION" --query 'Subnets' --output text)
+  if [ -z "$subnets" ] || [ "$subnets" = "None" ]; then
+    aws ec2 delete-vpc --vpc-id "$VPC_ID" --region "$REGION" || true
+  else
+    echo "VPC $VPC_ID still contains subnets and could not be deleted automatically" >&2
+  fi
+fi
 
 rm -f efs-storageclass.generated.yaml n8n-pv.generated.yaml n8n-deployment.generated.yaml n8n-worker-deployment.generated.yaml n8n-ingress.generated.yaml "$EFS_ID_FILE"
 rm -f "$CF_ID_FILE"
