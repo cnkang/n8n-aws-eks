@@ -5,6 +5,10 @@ metadata:
   name: REPLACE_ME_CLUSTER_NAME
   region: REPLACE_ME_REGION
   version: "1.33"
+availabilityZones:
+  - REPLACE_ME_AZ1
+  - REPLACE_ME_AZ2
+  - REPLACE_ME_AZ3
 iam:
   withOIDC: true
 cloudWatch:
