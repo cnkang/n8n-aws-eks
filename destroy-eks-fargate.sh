@@ -99,6 +99,8 @@ REQUIRED_ACTIONS=(
   "ec2:DescribeVpcs"
   "ec2:DescribeSubnets"
   "ec2:DeleteVpc"
+  "ec2:DeleteSubnet"
+  "ec2:DescribeNetworkInterfaces"
   "iam:SimulatePrincipalPolicy"
   "cloudfront:ListDistributions"
   "cloudfront:GetDistribution"
@@ -270,8 +272,23 @@ eksctl delete cluster \
 # Ensure the VPC created for the cluster is deleted
 if [ -n "$VPC_ID" ] && aws ec2 describe-vpcs --vpc-ids "$VPC_ID" --region "$REGION" >/dev/null 2>&1; then
   subnets=$(aws ec2 describe-subnets --filters Name=vpc-id,Values="$VPC_ID" \
+    --region "$REGION" --query 'Subnets[].SubnetId' --output text)
+  for subnet in $subnets; do
+    if [ -z "$subnet" ] || [ "$subnet" = "None" ]; then
+      continue
+    fi
+    in_use=$(aws ec2 describe-network-interfaces \
+      --filters Name=subnet-id,Values="$subnet" \
+      --region "$REGION" --query 'NetworkInterfaces' --output text)
+    if [ -z "$in_use" ] || [ "$in_use" = "None" ]; then
+      aws ec2 delete-subnet --subnet-id "$subnet" --region "$REGION" || true
+    else
+      echo "Subnet $subnet still in use and could not be deleted automatically" >&2
+    fi
+  done
+  remaining=$(aws ec2 describe-subnets --filters Name=vpc-id,Values="$VPC_ID" \
     --region "$REGION" --query 'Subnets' --output text)
-  if [ -z "$subnets" ] || [ "$subnets" = "None" ]; then
+  if [ -z "$remaining" ] || [ "$remaining" = "None" ]; then
     aws ec2 delete-vpc --vpc-id "$VPC_ID" --region "$REGION" || true
   else
     echo "VPC $VPC_ID still contains subnets and could not be deleted automatically" >&2
