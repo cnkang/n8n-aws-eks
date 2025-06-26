@@ -18,11 +18,20 @@ spec:
         runAsUser: 999
         runAsGroup: 1000
         fsGroup: 1000
+        allowPrivilegeEscalation: false
       containers:
         - name: redis
           image: redis:8-alpine
           ports:
             - containerPort: 6379
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
           livenessProbe:
             tcpSocket:
               port: 6379
