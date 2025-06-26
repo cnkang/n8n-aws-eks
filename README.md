@@ -132,6 +132,7 @@ This solution deploys [n8n](https://n8n.io/), an open source workflow automation
 
 - Kubernetes Secrets and database credentials are generated automatically but can be customised before deploying
 - Troubleshooting steps are documented in the scripts if resource creation fails
+- The deploy script ensures the region offers at least three Availability Zones and requires the RDS subnet group to span three or more of them.
 
 ## Caveats
 

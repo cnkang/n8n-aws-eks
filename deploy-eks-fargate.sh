@@ -74,6 +74,14 @@ if [[ ! $CLUSTER_NAME =~ ^[A-Za-z][-A-Za-z0-9]{0,127}$ ]]; then
   exit 1
 fi
 
+# Ensure the region has at least three availability zones
+mapfile -t AZS < <(aws ec2 describe-availability-zones --region "$REGION" \
+  --query "AvailabilityZones[?State=='available'].ZoneName" --output text | tr '\t' '\n' | sort)
+if [ "${#AZS[@]}" -lt 3 ]; then
+  echo "Region $REGION must have at least three availability zones" >&2
+  exit 1
+fi
+
 # Persist region and cluster name for the destroy script
 cat >"$DEPLOY_INFO_FILE" <<EOF
 REGION="$REGION"
@@ -95,6 +103,7 @@ REQUIRED_ACTIONS=(
   "ec2:AuthorizeSecurityGroupIngress"
   "ec2:DescribeSecurityGroups"
   "ec2:DescribeManagedPrefixLists"
+  "ec2:DescribeAvailabilityZones"
   "rds:CreateDBCluster"
   "rds:CreateDBInstance"
   "rds:CreateDBSubnetGroup"
@@ -273,6 +282,9 @@ echo "$EFS_ID" > "$EFS_ID_FILE"
 cfg="eks-fargate-cluster.generated.yaml"
 sed -e "s/REPLACE_ME_CLUSTER_NAME/$CLUSTER_NAME/" \
     -e "s/REPLACE_ME_REGION/$REGION/" \
+    -e "s/REPLACE_ME_AZ1/${AZS[0]}/" \
+    -e "s/REPLACE_ME_AZ2/${AZS[1]}/" \
+    -e "s/REPLACE_ME_AZ3/${AZS[2]}/" \
   eks-fargate-cluster.yaml > "$cfg"
 eksctl create cluster -f "$cfg"
 
@@ -365,6 +377,15 @@ if [ -n "$PRIVATE_SUBNETS" ]; then
   RDS_SUBNETS="$PRIVATE_SUBNETS"
 else
   RDS_SUBNETS="$SUBNETS"
+fi
+
+# Validate that the selected subnets span at least three AZs
+# shellcheck disable=SC2086
+subnet_azs=$(aws ec2 describe-subnets --subnet-ids $RDS_SUBNETS --region "$REGION" \
+  --query 'Subnets[*].AvailabilityZone' --output text | tr '\t' '\n' | sort -u | wc -l)
+if [ "$subnet_azs" -lt 3 ]; then
+  echo "RDS subnet group must include subnets in at least three AZs" >&2
+  exit 1
 fi
 
 # Install the AWS Load Balancer Controller if not present
