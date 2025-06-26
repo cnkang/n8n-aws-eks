@@ -209,7 +209,11 @@ echo "Deleting ALB resources..."
 LB_HOST=$(kubectl get ingress n8n -n n8n -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
 kubectl delete -f n8n-ingress.yaml --ignore-not-found
 kubectl delete -f n8n-hpa.yaml --ignore-not-found
-kubectl delete -f n8n-vpa.yaml --ignore-not-found
+if kubectl get crd verticalpodautoscalers.autoscaling.k8s.io >/dev/null 2>&1; then
+  kubectl delete -f n8n-vpa.yaml --ignore-not-found
+else
+  echo "VPA CRD not found. Skipping VPA resource deletion." >&2
+fi
 delete_vpa_crd
 kubectl delete -f n8n-worker-deployment.generated.yaml --ignore-not-found
 kubectl delete -f redis.yaml --ignore-not-found
