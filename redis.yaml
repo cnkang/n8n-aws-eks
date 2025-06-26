@@ -21,11 +21,11 @@ spec:
         allowPrivilegeEscalation: false
       containers:
         - name: redis
-          image: redis:8-alpine-alpine
+          image: redis:8-alpine
           securityContext:
-            allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             runAsNonRoot: true
+            allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL
@@ -33,14 +33,6 @@ spec:
               type: RuntimeDefault
           ports:
             - containerPort: 6379
-          securityContext:
-            readOnlyRootFilesystem: true
-            runAsNonRoot: true
-            capabilities:
-              drop:
-                - ALL
-            seccompProfile:
-              type: RuntimeDefault
           livenessProbe:
             tcpSocket:
               port: 6379
